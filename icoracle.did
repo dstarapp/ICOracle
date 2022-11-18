@@ -1,4 +1,24 @@
-type VolatilityResponse = record {
+type definite_canister_settings = 
+ record {
+   compute_allocation: nat;
+   controllers: vec principal;
+   freezing_threshold: nat;
+   memory_allocation: nat;
+ };
+type canister_status = 
+ record {
+   cycles: nat;
+   memory_size: nat;
+   module_hash: opt vec nat8;
+   settings: definite_canister_settings;
+   status: variant {
+             running;
+             stopped;
+             stopping;
+           };
+ };
+type VolatilityResponse = 
+ record {
    average: nat;
    close: nat;
    decimals: nat;
@@ -6,10 +26,33 @@ type VolatilityResponse = record {
    low: nat;
    open: nat;
    percent: float64;
-};
+ };
+type TransformArgs = 
+ record {
+   context: vec nat8;
+   response: CanisterHttpResponsePayload;
+ };
+type Token = record {arbitrary_data: text;};
+type Timestamp__1 = nat;
 type Timestamp = nat;
-type SourceType = variant {Governance; Dex; Weighted; Conversion; AutoOracle; NodeOracle; HybridOracle;};
-type SeriesInfo = record {
+type StreamingStrategy = variant {Callback: CallbackStrategy;};
+type StreamingCallbackHttpResponse = 
+ record {
+   body: blob;
+   token: opt Token;
+ };
+type SourceType = 
+ variant {
+   AutoOracle;
+   Conversion;
+   Dex;
+   Governance;
+   HybridOracle;
+   NodeOracle;
+   Weighted;
+ };
+type SeriesInfo = 
+ record {
    base: text;
    cacheDuration: nat;
    conDuration: nat;
@@ -19,53 +62,147 @@ type SeriesInfo = record {
    heartbeat: nat;
    name: text;
    quote: text;
-   sourceType: SourceType;
    sourceName: text;
-};
+   sourceType: SourceType;
+ };
+type SeriesId__1 = nat;
 type SeriesId = nat;
-type RequestLog = record {
+type SeriesDataResponse = 
+ record {
+   data: vec record {
+               Timestamp;
+               nat;
+             };
+   decimals: nat;
+   name: text;
+   sid: SeriesId__1;
+ };
+type RequestLog = 
+ record {
    provider: principal;
-   request: DataItem;
+   request: DataItem__1;
    signature: opt blob;
    time: Timestamp;
-};
+ };
 type Provider = principal;
-type Log = record {
-   confirmed: bool;
-   requestLogs: vec RequestLog;
-};
-type HttpHeader = record {
-   name: text;
-   value: text;
-};
-type DataResponse = record {
-   data: record { Timestamp; nat; };
-   decimals: nat;
-   name: text;
-   sid: SeriesId;
-};
-type SeriesDataResponse = record {
-   data: vec record { Timestamp; nat; };
-   decimals: nat;
-   name: text;
-   sid: SeriesId;
-};
-type DataItem = record {
-   timestamp: Timestamp;
-   value: nat;
-};
-type CanisterHttpResponsePayload = record {
-   body: vec nat8;
-   headers: vec HttpHeader;
-   status: nat;
-};
-type OutCallAPI = record {
+type OutCallAPI = 
+ record {
    host: text;
    key: text;
    name: text;
    url: text;
-};
-type Category = variant {
+ };
+type Log = 
+ record {
+   confirmed: bool;
+   requestLogs: vec RequestLog;
+ };
+type ICOracle = 
+ service {
+   _call_transform: (TransformArgs) -> (CanisterHttpResponsePayload) query;
+   _cmc_transform: (CanisterHttpResponsePayload) ->
+    (CanisterHttpResponsePayload) query;
+   addProviderAgent: (Provider, principal) -> ();
+   addProviderSid: (Provider, SeriesId) -> ();
+   canister_status: () -> (canister_status);
+   debug_fetchBA: () -> (nat, blob, text, nat);
+   debug_fetchCB: () -> (nat, blob, text, nat);
+   debug_fetchCMC: () -> (nat, blob, text, nat);
+   debug_fetchFX: () -> (nat, blob, text, nat);
+   debug_requestIcpXdr: () -> ();
+   delProviderAgent: (Provider, principal) -> ();
+   delProviderSid: (Provider, SeriesId) -> ();
+   delSeriesData: (SeriesId) -> (bool);
+   drc207: () -> (DRC207Support);
+   get: (SeriesId, opt Timestamp__1) -> (opt DataResponse) query;
+   getFee: () -> (nat) query;
+   getLog: (SeriesId, opt Timestamp__1) -> (opt Log) query;
+   getSeries: (SeriesId, opt nat) -> (SeriesDataResponse) query;
+   getSeriesInfo: (SeriesId) -> (opt SeriesInfo) query;
+   getWorkload: (Provider) -> (opt record {
+                                     nat;
+                                     nat;
+                                   }) query;
+   http_request: (HttpRequest) -> (HttpResponse) query;
+   latest: (Category) -> (vec DataResponse) query;
+   newSeriesInfo: (SeriesId, SeriesInfo) -> (bool);
+   removeProvider: (Provider) -> ();
+   request: (SeriesId, DataItem, opt blob) -> (bool);
+   setApi: (text, OutCallAPI) -> (bool);
+   setDexSupport: (text, principal) -> ();
+   setFee: (nat) -> ();
+   setProvider: (Provider, vec SeriesId, vec principal) -> ();
+   test_heartbeat_fetchBA: () -> (nat);
+   test_heartbeat_fetchCB: () -> (nat);
+   test_heartbeat_fetchCMC: () -> (nat);
+   test_heartbeat_fetchFX: () -> (nat);
+   test_heartbeat_fetchIcpXdr: () -> (nat);
+   updateSeriesInfo: (SeriesId, SeriesInfo) -> (bool);
+   volatility: (SeriesId, nat) -> (VolatilityResponse) query;
+   wallet_balance: () -> (nat) query;
+   wallet_receive: () -> ();
+ };
+type HttpResponse = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+   streaming_strategy: opt StreamingStrategy;
+   upgrade: opt bool;
+ };
+type HttpRequest = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HttpHeader = 
+ record {
+   name: text;
+   value: text;
+ };
+type HeaderField = 
+ record {
+   text;
+   text;
+ };
+type DataResponse = 
+ record {
+   data: record {
+           Timestamp;
+           nat;
+         };
+   decimals: nat;
+   name: text;
+   sid: SeriesId__1;
+ };
+type DataItem__1 = 
+ record {
+   timestamp: Timestamp;
+   value: nat;
+ };
+type DataItem = 
+ record {
+   timestamp: Timestamp;
+   value: nat;
+ };
+type DRC207Support = 
+ record {
+   cycles_receivable: bool;
+   monitorable_by_blackhole:
+    record {
+      allowed: bool;
+      canister_id: opt principal;
+    };
+   monitorable_by_self: bool;
+   timer: record {
+            enable: bool;
+            interval_seconds: opt nat;
+          };
+ };
+type Category = 
+ variant {
    Commodity;
    Crypto;
    Currency;
@@ -75,19 +212,16 @@ type Category = variant {
    Sports;
    Stock;
    Weather;
-};
-type ICOracle = service {
-   anon_get: (SeriesId, opt Timestamp) -> (opt DataResponse) query;
-   anon_getSeries: (SeriesId, opt nat) -> (SeriesDataResponse) query;
-   anon_latest: (Category) -> (vec DataResponse) query;
-   get: (SeriesId, opt Timestamp) -> (opt DataResponse);
-   getSeries: (SeriesId, opt nat) -> (SeriesDataResponse);
-   latest: (Category) -> (vec DataResponse);
-   volatility: (SeriesId, nat) -> (VolatilityResponse);
-   getFee: () -> (nat) query;
-   getLog: (SeriesId, opt Timestamp) -> (opt Log) query;
-   getSeriesInfo: (SeriesId) -> (opt SeriesInfo) query;
-   getWorkload: (Provider) -> (opt record { nat; nat; }) query;
-   request: (SeriesId, DataItem, opt blob) -> (bool);
-};
+ };
+type CanisterHttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+type CallbackStrategy = 
+ record {
+   callback: func (Token) -> (StreamingCallbackHttpResponse) query;
+   token: Token;
+ };
 service : () -> ICOracle
